@@ -28,7 +28,7 @@ class SortingHatGUI extends JFrame {
         loyaltyBox = createComboBox("Loyalität");
         ambitionBox = createComboBox("Ehrgeiz");
 
-        JButton sortButton = new JButton("Zuweisen");
+        JButton sortButton = new JButton("Zuweisen!");
         sortButton.addActionListener(new SortListener());
         add(sortButton);
 
