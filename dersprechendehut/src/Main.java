@@ -19,23 +19,19 @@ class SortingHatGUI extends JFrame {
         setLocationRelativeTo(null);
         setLayout(new GridLayout(6, 2));
 
-        // Eingabefelder
         add(new JLabel("Name:"));
         nameField = new JTextField();
         add(nameField);
 
-        // Eigenschaften
         courageBox = createComboBox("Mut");
         intelligenceBox = createComboBox("Klugheit");
         loyaltyBox = createComboBox("Loyalität");
         ambitionBox = createComboBox("Ehrgeiz");
 
-        // Sortier-Schaltfläche
         JButton sortButton = new JButton("Sortieren");
         sortButton.addActionListener(new SortListener());
         add(sortButton);
 
-        // Ergebnisfeld
         resultLabel = new JLabel("Ergebnis: ");
         add(resultLabel);
 
@@ -49,7 +45,6 @@ class SortingHatGUI extends JFrame {
         return comboBox;
     }
 
-    // Event Listener für die Sortierlogik
     private class SortListener implements ActionListener {
         public void actionPerformed(ActionEvent e) {
             String name = nameField.getText();
@@ -63,7 +58,6 @@ class SortingHatGUI extends JFrame {
         }
     }
 
-    // Methode zur Hauszuweisung
     private String determineHouse(int courage, int intelligence, int loyalty, int ambition) {
         if (courage >= intelligence && courage >= loyalty && courage >= ambition) {
             return "Gryffindor";
