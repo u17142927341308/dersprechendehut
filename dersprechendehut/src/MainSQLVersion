@@ -1,0 +1,171 @@
+import javax.swing.*;
+import java.awt.*;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
+import java.util.Objects;
+import java.sql.Connection;
+import java.sql.DriverManager;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.sql.Statement;
+
+class SortingHatGUI extends JFrame {
+    private final JTextField nameField;
+    private final JComboBox<String> courageBox;
+    private final JComboBox<String> intelligenceBox;
+    private final JComboBox<String> loyaltyBox;
+    private final JComboBox<String> ambitionBox;
+    private final JLabel resultLabel;
+    
+    public SortingHatGUI() {
+        setTitle("Sprechender Hut");
+        setSize(400, 300);
+        setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+        setLocationRelativeTo(null);
+        setLayout(new GridLayout(6, 2));
+        add(new JLabel("Name:"));
+        nameField = new JTextField();
+        add(nameField);
+        courageBox = createComboBox("Mut");
+        intelligenceBox = createComboBox("Klugheit");
+        loyaltyBox = createComboBox("Loyalität");
+        ambitionBox = createComboBox("Ehrgeiz");
+        JButton sortButton = new JButton("Zuweisen");
+        sortButton.addActionListener(new SortListener());
+        add(sortButton);
+        resultLabel = new JLabel("Ergebnis: ");
+        add(resultLabel);
+        setVisible(true);
+    }
+    
+    private JComboBox<String> createComboBox(String label) {
+        add(new JLabel(label + ":"));
+        JComboBox<String> comboBox = new JComboBox<>(new String[]{"1", "2", "3", "4", "5"});
+        add(comboBox);
+        return comboBox;
+    }
+    
+    private class SortListener implements ActionListener {
+        public void actionPerformed(ActionEvent e) {
+            String name = nameField.getText();
+            int courage = Integer.parseInt((String) Objects.requireNonNull(courageBox.getSelectedItem()));
+            int intelligence = Integer.parseInt((String) Objects.requireNonNull(intelligenceBox.getSelectedItem()));
+            int loyalty = Integer.parseInt((String) Objects.requireNonNull(loyaltyBox.getSelectedItem()));
+            int ambition = Integer.parseInt((String) Objects.requireNonNull(ambitionBox.getSelectedItem()));
+            String house = determineHouse(courage, intelligence, loyalty, ambition);
+            resultLabel.setText(name + " gehört nach " + house + "!");
+            
+            try {
+        		Connection conn = DriverManager.getConnection("jdbc:sqlite:csc205.db");
+    			insertData(conn, name, courage, intelligence, loyalty, ambition, house);
+    		} catch (SQLException e1) {
+    				//no idea why, but eclipse says I need it
+    		}
+        }
+    }
+    private String determineHouse(int courage, int intelligence, int loyalty, int ambition) {
+    	
+        if (courage >= intelligence && courage >= loyalty && courage >= ambition) {
+            return "Gryffindor";
+        } else if (intelligence >= courage && intelligence >= loyalty && intelligence >= ambition) {
+            return "Ravenclaw";
+        } else if (loyalty >= courage && loyalty >= intelligence && loyalty >= ambition) {
+            return "Hufflepuff";
+        } else {
+            return "Slytherin";
+        }
+    }
+    
+    public static void main(String[] args) {
+        new SortingHatGUI();
+            
+        Connection conn = null;
+		try {
+			
+			conn = DriverManager.getConnection("jdbc:sqlite:csc205.db");
+			System.out.println("Datenbank Verbindung aufgebaut!");
+			try {
+          //nothing
+			}
+			catch (Exception ignored){
+				createTable(conn);
+			}
+			
+			System.out.println();
+			System.out.println("Daten werden verarbeitet");
+			insertData(conn, "Harry", 2, 3, 4, 3, "Gryffindoor");
+			
+			System.out.println("Zeige die Daten an!");
+			displayDatabase(conn, "Data");
+		}
+		catch (SQLException e) {
+			e.printStackTrace();
+			System.out.println(e.getClass().getName() + ": " + e.getMessage());
+			//gucke hier: https://www.youtube.com/watch?v=dQw4w9WgXcQ
+		}
+		finally {
+			if (conn != null) {
+				try {
+					conn.close();
+				} catch (SQLException e) {
+					e.printStackTrace();
+					System.out.println(e.getMessage());
+				}
+			}
+		}
+    }
+    
+    private static void displayDatabase(Connection conn, String tableName) throws SQLException {
+		String selectSQL = "SELECT * from " + tableName;
+		Statement stmt = conn.createStatement();
+		ResultSet rs = stmt.executeQuery(selectSQL);
+		
+		System.out.println("-----" + tableName + "-----");
+		while(rs.next()) {
+			System.out.print("Haus: " + rs.getString("name") + ", ");
+			System.out.print(rs.getInt("intelligence") + ", ");
+			System.out.print(rs.getInt("courage") + ", ");
+			System.out.print(rs.getInt("loyalty") + ", ");
+			System.out.print(rs.getInt("ambition") + ", ");
+			System.out.print(rs.getString("house"));
+		}
+		System.out.println("-----------------------");
+	}
+	
+	private static void insertData(Connection conn, String name, int intelligence, int courage, int loyalty, int ambition, String house) throws SQLException {
+		String insertSQL = "INSERT INTO Data(name, intelligence, courage, loyalty, ambition, house) VALUES(?,?,?,?,?,?)";
+		PreparedStatement pstmt = conn.prepareStatement(insertSQL);
+		pstmt.setString(1, name);
+		pstmt.setInt(2, intelligence);
+		pstmt.setInt(3, courage);
+		pstmt.setInt(4, loyalty);
+		pstmt.setInt(5, ambition);
+		pstmt.setString(6, house);
+		pstmt.executeUpdate();
+		
+	}
+	
+	private static void createTable(Connection conn) throws SQLException {
+		String createTablesql = "" +
+				"CREATE TABLE	Data " +
+				"( " +
+				"title varchar(255)" +
+				"intelligence integer, " +
+				"courage integer" +
+				"loyalty integer" +
+				"ambition integer" +
+				"house varchar(255)" +
+				");" +
+				"";
+		Statement stmt = conn.createStatement();
+		stmt.execute(createTablesql);
+	}
+	
+/*	private static void deleteTable(Connection conn) throws SQLException {
+		String deleteTableSQL = "DROP TABLE Data";
+		Statement stmt = conn.createStatement();
+		stmt.execute(deleteTableSQL);
+		
+	} */
+}
